@@ -1,0 +1,17 @@
+{
+  "nginx_bots_updated": "2026-03-10 20:49 UTC",
+  "apache_bots_updated": "2026-03-10 20:49 UTC",
+  "seclists_ua_updated": "2026-03-10 20:49 UTC",
+  "mthcht_malware_updated": "2026-03-10 20:49 UTC",
+  "crawlers_updated": "2026-03-10 20:49 UTC",
+  "matomo_bots_updated": "2026-03-10 20:49 UTC",
+  "last_auto_update": "2026-03-10 20:49 UTC",
+  "nginx_bots_count": 4,
+  "apache_bots_count": 683,
+  "seclists_ua_count": 2453,
+  "bad_bots_total": 3110,
+  "mthcht_count": 1555,
+  "crawlers_count": 1767,
+  "matomo_count": 798,
+  "total_patterns": 7230
+}

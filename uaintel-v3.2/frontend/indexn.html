@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>UAIntel — User-Agent Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700;900&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ══════════════════════════════════════════
+   FIXED ACCENT (never changes with theme)
+══════════════════════════════════════════ */
+:root {
+  --red:        #c0182a;
+  --red-hover:  #e0253b;
+  --red-light:  #ef4444;
+  --red-bg:     rgba(192,24,42,.08);
+  --red-border: rgba(192,24,42,.22);
+  --red-glow:   rgba(192,24,42,.18);
+
+  --green:      #16a34a;
+  --green-bg:   rgba(22,163,74,.08);
+  --green-bdr:  rgba(22,163,74,.2);
+  --yellow:     #b45309;
+  --yellow-bg:  rgba(180,83,9,.08);
+  --yellow-bdr: rgba(180,83,9,.2);
+  --orange:     #c2410c;
+  --orange-bg:  rgba(194,65,12,.08);
+  --orange-bdr: rgba(194,65,12,.2);
+  --purple:     #7c3aed;
+  --purple-bg:  rgba(124,58,237,.08);
+  --purple-bdr: rgba(124,58,237,.2);
+  --teal:       #0d9488;
+  --teal-bg:    rgba(13,148,136,.07);
+  --teal-bdr:   rgba(13,148,136,.2);
+
+  --font-ui:   'Source Sans 3', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Roboto Mono', 'Courier New', monospace;
+}
+
+/* ══════════════════════════════════════════
+   DARK THEME
+══════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:         #111214;
+  --bg2:        #18191d;
+  --bg3:        #1e2026;
+  --surface:    #1c1d21;
+  --surface2:   #23242a;
+  --surface3:   #2a2b32;
+
+  --border:     #2c2d35;
+  --border2:    #363840;
+  --border3:    #444650;
+
+  --text-pri:   #f0f1f3;
+  --text-sec:   #b8bac2;
+  --text-ter:   #72747e;
+  --text-dis:   #44454f;
+
+  --topbar-bg:  rgba(17,18,20,.94);
+  --shadow-sm:  0 1px 4px rgba(0,0,0,.35);
+  --shadow-md:  0 4px 16px rgba(0,0,0,.45);
+  --shadow-lg:  0 10px 36px rgba(0,0,0,.55);
+  --dot-color:  rgba(255,255,255,.035);
+}
+
+/* ══════════════════════════════════════════
+   LIGHT THEME
+══════════════════════════════════════════ */
+[data-theme="light"] {
+  --bg:         #f4f5f7;
+  --bg2:        #ecedf1;
+  --bg3:        #e4e5ea;
+  --surface:    #ffffff;
+  --surface2:   #f8f8fa;
+  --surface3:   #f0f1f4;
+
+  --border:     #dddee4;
+  --border2:    #c8cad2;
+  --border3:    #b0b2bc;
+
+  --text-pri:   #111318;
+  --text-sec:   #3d3f4a;
+  --text-ter:   #6b6d7a;
+  --text-dis:   #a0a2ae;
+
+  --topbar-bg:  rgba(244,245,247,.96);
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.05);
+  --shadow-lg:  0 10px 32px rgba(0,0,0,.11), 0 4px 8px rgba(0,0,0,.06);
+  --dot-color:  rgba(0,0,0,.055);
+}
+
+/* ══════════════════════════════════════════
+   BASE
+══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text-pri);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  transition: background .25s ease, color .25s ease;
+}
+
+/* Dot grid texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Red top accent bar — always red, never changes */
+body::after {
+  content: '';
+  position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 300;
+  background: linear-gradient(90deg, #8b0000 0%, #c0182a 35%, #ef4444 65%, #c0182a 100%);
+}
+
+.page { position: relative; z-index: 1; }
+
+/* ══════════════════════════════════════════
+   THEME SWITCHER
+══════════════════════════════════════════ */
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  padding: 3px;
+  gap: 2px;
+  cursor: pointer;
+}
+.ts-opt {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  color: var(--text-ter);
+  transition: all .2s ease;
+  font-size: 13px;
+}
+.ts-opt.active {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--red-glow);
+}
+.ts-opt:not(.active):hover { color: var(--text-sec); }
+
+/* ══════════════════════════════════════════
+   TOPBAR
+══════════════════════════════════════════ */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 54px;
+  background: var(--topbar-bg);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 3px; z-index: 200;
+  box-shadow: var(--shadow-sm);
+  transition: background .25s, border-color .25s;
+}
+
+.tb-brand { display: flex; align-items: center; gap: 10px; }
+
+/* Topbar mini shield logo */
+.tb-shield {
+  width: 30px; height: 30px; flex-shrink: 0;
+}
+
+.tb-name {
+  font-family: var(--font-ui);
+  font-weight: 700; font-size: 1rem;
+  letter-spacing: -.01em;
+  color: var(--text-pri);
+}
+.tb-name em { font-style: normal; color: var(--red); }
+
+.tb-search {
+  flex: 1; max-width: 460px; margin: 0 28px; position: relative;
+}
+.tb-search input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text-pri);
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  padding: 8px 14px 8px 36px;
+  outline: none;
+  transition: border-color .18s, box-shadow .18s, background .18s;
+}
+.tb-search input:focus {
+  background: var(--surface);
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px var(--red-bg);
+}
+.tb-search input::placeholder { color: var(--text-dis); }
+.tb-search-icon {
+  position: absolute; left: 11px; top: 50%;
+  transform: translateY(-50%); color: var(--text-ter); pointer-events: none;
+}
+
+.tb-right { display: flex; align-items: center; gap: 8px; }
+
+.tb-btn {
+  font-family: var(--font-ui); font-weight: 600; font-size: .8rem;
+  padding: 7px 16px; border-radius: 5px; border: none; cursor: pointer;
+  transition: all .18s; letter-spacing: .01em;
+}
+.tb-ghost {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text-ter);
+}
+.tb-ghost:hover {
+  background: var(--surface2); color: var(--text-sec); border-color: var(--border3);
+}
+.tb-primary {
+  background: var(--red); color: #fff; font-weight: 700;
+  box-shadow: 0 2px 8px var(--red-glow);
+}
+.tb-primary:hover {
+  background: var(--red-hover);
+  box-shadow: 0 4px 14px rgba(192,24,42,.32);
+}
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+.hero {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 24px 68px;
+  text-align: center;
+}
+
+/* Logo */
+.center-logo {
+  margin-bottom: 24px;
+  animation: logoIn .7s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes logoIn {
+  from { opacity: 0; transform: translateY(-16px) scale(.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.center-logo svg {
+  width: 110px; height: 110px;
+  filter: drop-shadow(0 8px 28px rgba(192,24,42,.28)) drop-shadow(0 2px 6px rgba(0,0,0,.2));
+  transition: filter .3s, transform .3s;
+}
+.center-logo:hover svg {
+  filter: drop-shadow(0 12px 36px rgba(192,24,42,.42)) drop-shadow(0 3px 8px rgba(0,0,0,.25));
+  transform: translateY(-2px);
+}
+
+/* Wordmark */
+.hero-wordmark {
+  font-family: var(--font-ui);
+  font-weight: 900; font-size: 3rem;
+  letter-spacing: -.02em; color: var(--text-pri); line-height: 1;
+  margin-bottom: 12px;
+  animation: riseIn .6s .1s cubic-bezier(.16,1,.3,1) both;
+}
+.hero-wordmark em { font-style: normal; color: var(--red); }
+
+.hero-tagline {
+  font-family: var(--font-mono);
+  font-size: .75rem; color: var(--text-ter);
+  letter-spacing: .02em; max-width: 480px; line-height: 1.8;
+  margin-bottom: 40px;
+  animation: riseIn .6s .18s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════
+   ANALYSIS PANEL
+══════════════════════════════════════════ */
+.analysis-panel {
+  width: 100%; max-width: 680px;
+  animation: riseIn .6s .26s cubic-bezier(.16,1,.3,1) both;
+}
+
+.tabs { display: flex; border-bottom: 1px solid var(--border2); }
+.tab {
+  font-family: var(--font-ui); font-size: .74rem; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase;
+  padding: 11px 24px; background: transparent; border: none;
+  border-bottom: 2px solid transparent; color: var(--text-dis);
+  cursor: pointer; transition: all .18s; margin-bottom: -1px;
+}
+.tab:hover { color: var(--text-sec); }
+.tab.on { color: var(--red); border-bottom-color: var(--red); }
+
+.tab-panels {
+  background: var(--surface);
+  border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 10px 10px;
+  box-shadow: var(--shadow-md);
+  transition: background .25s, border-color .25s;
+}
+.tab-panel { display: none; padding: 22px; }
+.tab-panel.on { display: block; }
+
+.input-label {
+  font-family: var(--font-ui); font-size: .7rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-ter); margin-bottom: 8px; text-align: left;
+}
+
+.ua-input {
+  width: 100%;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text-pri);
+  font-family: var(--font-mono); font-size: .77rem;
+  padding: 12px 14px; resize: none; height: 76px; outline: none; line-height: 1.7;
+  transition: border-color .18s, box-shadow .18s, background .18s;
+}
+.ua-input:focus {
+  background: var(--surface);
+  border-color: var(--red); box-shadow: 0 0 0 3px var(--red-bg);
+}
+.ua-input::placeholder { color: var(--text-dis); }
+
+.input-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+
+.btn-analyze {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--red); color: #fff;
+  font-family: var(--font-ui); font-weight: 700; font-size: .8rem;
+  letter-spacing: .04em; text-transform: uppercase;
+  padding: 11px 24px; border: none; border-radius: 6px;
+  cursor: pointer; transition: all .2s;
+  box-shadow: 0 3px 14px var(--red-glow);
+}
+.btn-analyze:hover {
+  background: var(--red-hover);
+  box-shadow: 0 5px 20px rgba(192,24,42,.38); transform: translateY(-1px);
+}
+.btn-analyze:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-sec {
+  background: transparent; border: 1px solid var(--border2); border-radius: 6px;
+  color: var(--text-ter); font-family: var(--font-ui); font-size: .77rem; font-weight: 500;
+  padding: 10px 14px; cursor: pointer; transition: all .18s;
+}
+.btn-sec:hover { background: var(--surface2); border-color: var(--border3); color: var(--text-sec); }
+
+.samples { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 11px; }
+.sample-btn {
+  font-family: var(--font-ui); font-size: .68rem; font-weight: 500;
+  padding: 3px 10px; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text-dis); background: none; cursor: pointer; transition: all .14s;
+}
+.sample-btn:hover { border-color: var(--red-border); color: var(--red); background: var(--red-bg); }
+
+/* Scan */
+.scan-wrap { display: none; text-align: center; padding: 22px 0; }
+.scan-wrap.on { display: block; }
+.scan-track { width: 220px; height: 1px; background: var(--border2); margin: 0 auto 12px; overflow: hidden; }
+.scan-fill { height: 100%; background: linear-gradient(90deg,transparent,var(--red),transparent); animation: scan 1.4s ease-in-out infinite; }
+@keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
+.scan-txt { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .16em; color: var(--text-dis); animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.error-box {
+  display: none; background: var(--red-bg); border: 1px solid var(--red-border);
+  border-left: 3px solid var(--red); border-radius: 6px;
+  padding: 10px 14px; font-family: var(--font-mono); font-size: .68rem; color: var(--red-light);
+  margin-bottom: 14px; text-align: left;
+}
+.error-box.on { display: block; }
+
+/* ══════════════════════════════════════════
+   RESULTS
+══════════════════════════════════════════ */
+#results {
+  width: 100%; max-width: 840px;
+  margin-top: 20px; display: none;
+  animation: riseIn .32s ease both;
+}
+
+.verdict-bar {
+  display: grid; grid-template-columns: 84px 1fr;
+  border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border); margin-bottom: 12px;
+  box-shadow: var(--shadow-md);
+  transition: background .25s, border-color .25s;
+}
+.vs-panel {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px 10px; border-right: 1px solid var(--border);
+}
+.vs-num { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 500; line-height: 1; }
+.vs-max { font-family: var(--font-mono); font-size: .5rem; letter-spacing: .1em; color: var(--text-dis); margin-top: 2px; }
+.vi-panel { padding: 16px 20px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.vi-cat { font-family: var(--font-ui); font-size: .66rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text-ter); }
+.vi-verdict { font-family: var(--font-ui); font-weight: 900; font-size: 1.55rem; letter-spacing: .01em; text-transform: uppercase; line-height: 1.1; }
+.vi-sub { font-family: var(--font-mono); font-size: .6rem; color: var(--text-ter); margin-top: 2px; }
+
+.verdict-bar.legitimate .vs-panel { background: var(--green-bg); }
+.verdict-bar.legitimate .vs-num, .verdict-bar.legitimate .vi-verdict { color: var(--green); }
+.verdict-bar.suspicious .vs-panel { background: var(--yellow-bg); }
+.verdict-bar.suspicious .vs-num, .verdict-bar.suspicious .vi-verdict { color: var(--yellow); }
+.verdict-bar.likely .vs-panel { background: var(--orange-bg); }
+.verdict-bar.likely .vs-num, .verdict-bar.likely .vi-verdict { color: var(--orange); }
+.verdict-bar.malicious .vs-panel { background: var(--red-bg); }
+.verdict-bar.malicious .vs-num, .verdict-bar.malicious .vi-verdict { color: var(--red); }
+
+.score-strip { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; margin-bottom: 12px; }
+.strip-fill { height: 100%; transition: width .9s cubic-bezier(.4,0,.2,1); }
+.strip-fill.legitimate { background: var(--green); }
+.strip-fill.suspicious { background: var(--yellow); }
+.strip-fill.likely     { background: var(--orange); }
+.strip-fill.malicious  { background: var(--red); }
+
+.cat-strip { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
+.ctag {
+  font-family: var(--font-ui); font-size: .66rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 4px; border: 1px solid;
+}
+.ctag.malicious,.ctag.scanner { color:var(--red);    border-color:var(--red-border); background:var(--red-bg); }
+.ctag.bot        { color:var(--purple); border-color:var(--purple-bdr); background:var(--purple-bg); }
+.ctag.crawler    { color:var(--green);  border-color:var(--green-bdr);  background:var(--green-bg); }
+.ctag.automation { color:var(--orange); border-color:var(--orange-bdr); background:var(--orange-bg); }
+.ctag.spoofed,.ctag.fake_combo { color:var(--yellow); border-color:var(--yellow-bdr); background:var(--yellow-bg); }
+.ctag.http_lib   { color:var(--teal);   border-color:var(--teal-bdr);   background:var(--teal-bg); }
+.ctag.legitimate { color:var(--green);  border-color:var(--green-bdr);  background:var(--green-bg); }
+.ctag.suspicious { color:var(--yellow); border-color:var(--yellow-bdr); background:var(--yellow-bg); }
+
+.ua-display {
+  font-family: var(--font-mono); font-size: .71rem; color: var(--red-light);
+  background: var(--bg2); border: 1px solid var(--border);
+  border-left: 3px solid var(--red); border-radius: 6px;
+  padding: 11px 14px; word-break: break-all; line-height: 1.8; margin-bottom: 12px; text-align: left;
+  transition: background .25s, border-color .25s;
+}
+[data-theme="light"] .ua-display { color: var(--red); }
+
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+@media(max-width:660px){ .res-grid { grid-template-columns: 1fr; } }
+
+.res-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px 18px; box-shadow: var(--shadow-sm);
+  transition: background .25s, border-color .25s;
+}
+.rc-title {
+  font-family: var(--font-ui); font-size: .66rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--red); border-bottom: 1px solid var(--border);
+  padding-bottom: 9px; margin-bottom: 10px; opacity: .8;
+}
+.rc-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 5px 0; border-bottom: 1px solid var(--bg3);
+}
+.rc-row:last-child { border-bottom: none; }
+.rck { font-family: var(--font-ui); font-size: .72rem; color: var(--text-ter); font-weight: 400; }
+.rcv { font-family: var(--font-mono); font-size: .66rem; color: var(--text-sec); font-weight: 500; max-width: 58%; text-align: right; word-break: break-all; }
+
+.flag-row { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--bg3); }
+.flag-row:last-child { border-bottom: none; }
+.flag-pill {
+  font-family: var(--font-ui); font-size: .62rem; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 4px; border: 1px solid; flex-shrink: 0; white-space: nowrap;
+}
+.flag-pill.malware,.flag-pill.db_malware,.flag-pill.scanner
+  { color:var(--red);    border-color:var(--red-border); background:var(--red-bg); }
+.flag-pill.automation,.flag-pill.db_bad_bot
+  { color:var(--orange); border-color:var(--orange-bdr); background:var(--orange-bg); }
+.flag-pill.http_lib
+  { color:var(--teal);   border-color:var(--teal-bdr);   background:var(--teal-bg); }
+.flag-pill.fake_combo,.flag-pill.spoofed,.flag-pill.suspicious
+  { color:var(--yellow); border-color:var(--yellow-bdr); background:var(--yellow-bg); }
+.flag-pill.crawler,.flag-pill.db_crawler
+  { color:var(--green);  border-color:var(--green-bdr);  background:var(--green-bg); }
+.flag-pill.db_matomo
+  { color:var(--purple); border-color:var(--purple-bdr); background:var(--purple-bg); }
+.flag-lbl { font-family: var(--font-ui); font-size: .73rem; color: var(--text-sec); flex: 1; line-height: 1.5; }
+.flag-sev {
+  font-family: var(--font-ui); font-size: .6rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; flex-shrink: 0;
+}
+.flag-sev.critical { background:var(--red-bg);    color:var(--red); }
+.flag-sev.high     { background:var(--orange-bg); color:var(--orange); }
+.flag-sev.medium   { background:var(--yellow-bg); color:var(--yellow); }
+.flag-sev.low      { background:var(--teal-bg);   color:var(--teal); }
+.flag-sev.info     { background:var(--green-bg);  color:var(--green); }
+.no-flags { font-family:var(--font-ui); font-size:.73rem; color:var(--green); padding:12px 0; text-align:center; font-weight:500; }
+
+.cbar { display:flex; align-items:center; gap:10px; margin:6px 0; }
+.cbar-lbl { font-family:var(--font-ui); font-size:.68rem; color:var(--text-ter); width:66px; flex-shrink:0; font-weight:400; }
+.cbar-track { flex:1; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+.cbar-fill { height:100%; border-radius:2px; transition:width .7s ease; }
+.cbar-fill.r { background:var(--red); } .cbar-fill.y { background:var(--yellow); } .cbar-fill.g { background:var(--green); }
+.cbar-pct { font-family:var(--font-mono); font-size:.6rem; width:32px; text-align:right; flex-shrink:0; }
+
+/* ══════════════════════════════════════════
+   COMMUNITY REPORT
+══════════════════════════════════════════ */
+.community-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-top: 2px solid var(--red);
+  border-radius: 0 0 8px 8px; padding: 20px 20px 18px;
+  margin-top: 10px; text-align: left; box-shadow: var(--shadow-sm);
+  transition: background .25s, border-color .25s;
+}
+.cs-title {
+  font-family: var(--font-ui); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--red); margin-bottom: 16px; opacity: .8;
+}
+.step-label {
+  font-family: var(--font-ui); font-size: .7rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-ter); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sn {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid var(--red-border); background: var(--red-bg);
+  color: var(--red); font-size: .6rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; margin-bottom: 16px; }
+.cat-opt {
+  border: 1px solid var(--border2); border-radius: 6px; background: var(--bg2);
+  color: var(--text-ter); font-family: var(--font-ui); font-size: .72rem; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; padding: 10px 8px;
+  cursor: pointer; transition: all .18s; text-align: center;
+}
+.cat-opt:hover { background: var(--surface2); border-color: var(--border3); color: var(--text-sec); }
+.cat-opt.sel-malicious { border-color:var(--red);    color:var(--red);    background:var(--red-bg);    box-shadow:0 0 0 3px rgba(192,24,42,.1); }
+.cat-opt.sel-bot       { border-color:var(--purple-bdr); color:var(--purple); background:var(--purple-bg); box-shadow:0 0 0 3px rgba(124,58,237,.08); }
+.cat-opt.sel-benign    { border-color:var(--green-bdr);  color:var(--green);  background:var(--green-bg);  box-shadow:0 0 0 3px rgba(22,163,74,.08); }
+.comm-textarea {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: 6px;
+  color: var(--text-pri); font-family: var(--font-mono); font-size: .71rem;
+  padding: 10px 12px; resize: none; height: 70px; outline: none; line-height: 1.6;
+  transition: border-color .18s, box-shadow .18s, background .18s; margin-bottom: 5px;
+}
+.comm-textarea:focus { background: var(--surface); border-color: var(--red); box-shadow: 0 0 0 3px var(--red-bg); }
+.comm-textarea::placeholder { color: var(--text-dis); }
+.comm-textarea.shake { animation: shake .4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+.char-ct { font-family:var(--font-mono); font-size:.6rem; color:var(--text-dis); text-align:right; margin-bottom:9px; }
+.hint-msg { display:none; font-family:var(--font-ui); font-size:.7rem; font-weight:500; padding:7px 12px; border-radius:5px; margin-bottom:9px; align-items:center; gap:8px; }
+.hint-msg.show { display:flex; }
+.hint-cat { background:rgba(29,78,216,.06); border:1px solid rgba(29,78,216,.18); color:#2563eb; }
+.hint-cmt { background:var(--yellow-bg); border:1px solid var(--yellow-bdr); color:var(--yellow); }
+.btn-submit {
+  width:100%; background:var(--red); border:none; border-radius:6px;
+  color:#fff; font-family:var(--font-ui); font-weight:700; font-size:.8rem;
+  letter-spacing:.05em; text-transform:uppercase; padding:12px;
+  cursor:pointer; transition:all .2s; box-shadow:0 3px 14px var(--red-glow);
+}
+.btn-submit:hover { background:var(--red-hover); box-shadow:0 5px 20px rgba(192,24,42,.35); }
+.btn-submit:disabled { opacity:.4; cursor:not-allowed; box-shadow:none; }
+.vote-row { display:flex; gap:8px; margin-top:12px; }
+.vc { flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; transition:background .25s,border-color .25s; }
+.vc-n { font-family:var(--font-mono); font-size:.95rem; font-weight:500; }
+.vc-l { font-family:var(--font-ui); font-size:.62rem; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dis); margin-top:2px; }
+.vc.vm { border-color:var(--red-border); } .vc.vm .vc-n { color:var(--red); }
+.vc.vb { border-color:var(--purple-bdr); } .vc.vb .vc-n { color:var(--purple); }
+.vc.vg { border-color:var(--green-bdr); }  .vc.vg .vc-n { color:var(--green); }
+
+/* ══════════════════════════════════════════
+   STATS BAR
+══════════════════════════════════════════ */
+.hero-stats {
+  display: flex; margin-top: 40px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);
+  animation: riseIn .6s .44s cubic-bezier(.16,1,.3,1) both;
+  transition: background .25s, border-color .25s;
+}
+.hstat { padding: 16px 28px; text-align: center; border-right: 1px solid var(--border); flex: 1; }
+.hstat:last-child { border-right: none; }
+.hstat-val { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 500; color: var(--red); line-height: 1; }
+.hstat-lbl { font-family: var(--font-ui); font-size: .64rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dis); margin-top: 5px; }
+
+/* ── Recent ── */
+.recent-item {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+  padding: 9px 6px; border-radius: 5px; cursor: pointer; transition: background .14s;
+  border-bottom: 1px solid var(--border);
+}
+.recent-item:last-child { border-bottom: none; }
+.recent-item:hover { background: var(--bg2); }
+.ri-ua { font-family: var(--font-mono); font-size: .66rem; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ri-v { font-family: var(--font-ui); font-size: .65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; border: 1px solid; white-space: nowrap; }
+.ri-s { font-family: var(--font-mono); font-size: .7rem; font-weight: 500; min-width: 22px; text-align: right; }
+
+/* ── DB mini cards ── */
+.db-mini { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; transition: background .25s; }
+.db-mini-name { font-family: var(--font-ui); font-size: .71rem; font-weight: 600; color: var(--text-sec); margin-bottom: 4px; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 22px; right: 22px;
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text-sec);
+  border-radius: 8px; padding: 11px 18px;
+  font-family: var(--font-ui); font-size: .76rem; font-weight: 500;
+  transform: translateY(60px); opacity: 0;
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  z-index: 999; box-shadow: var(--shadow-lg);
+}
+.toast.on { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═══ TOPBAR ═══ -->
+<header class="topbar">
+  <div class="tb-brand">
+    <!-- Mini shield logo in topbar -->
+    <svg class="tb-shield" viewBox="0 0 60 60" fill="none">
+      <defs>
+        <linearGradient id="tbl" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#e0253b"/>
+          <stop offset="100%" stop-color="#8b0012"/>
+        </linearGradient>
+      </defs>
+      <path d="M30 3L5 13v15c0 13 9.6 25.2 25 28.8C41.4 53.2 55 41 55 28V13L30 3z" fill="url(#tbl)"/>
+      <path d="M30 6.5L8 15.5v12.5c0 10.8 8 21 22 24.2C43.8 49 52 38.8 52 28V15.5L30 6.5z" fill="none" stroke="rgba(255,160,160,.25)" stroke-width="1"/>
+      <!-- U -->
+      <rect x="14" y="18" width="4" height="12" rx="2" fill="white" opacity=".93"/>
+      <rect x="28" y="18" width="4" height="12" rx="2" fill="white" opacity=".93"/>
+      <rect x="14" y="26" width="18" height="4" rx="2" fill="white" opacity=".93"/>
+      <!-- A -->
+      <path d="M26 39 L32 22 L38 39" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".93"/>
+      <line x1="28" y1="33" x2="36" y2="33" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity=".93"/>
+    </svg>
+    <span class="tb-name">UA<em>Intel</em></span>
+  </div>
+
+  <div class="tb-search">
+    <svg class="tb-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="topbarInput" placeholder="Quick lookup — paste any User-Agent string..."
+      onkeydown="if(event.key==='Enter'){document.getElementById('mainInput').value=this.value;runAnalysis()}">
+  </div>
+
+  <div class="tb-right">
+    <button class="tb-btn tb-ghost" onclick="goTab('recent',document.querySelectorAll('.tab')[1]);loadRecent()">Recent</button>
+    <button class="tb-btn tb-ghost" onclick="goTab('dbstatus',document.querySelectorAll('.tab')[2]);loadDbStatus()">DB Status</button>
+
+    <!-- THEME SWITCHER -->
+    <div class="theme-switcher" title="Switch theme" onclick="toggleTheme()">
+      <div class="ts-opt" id="ts-dark">
+        <!-- Moon -->
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </div>
+      <div class="ts-opt" id="ts-light">
+        <!-- Sun -->
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </div>
+    </div>
+
+    <button class="tb-btn tb-primary">Sign In</button>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+
+  <!-- ORIGINAL SHIELD LOGO -->
+  <div class="center-logo">
+    <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lg1" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="#e0253b"/>
+          <stop offset="55%"  stop-color="#c0182a"/>
+          <stop offset="100%" stop-color="#7a0012"/>
+        </linearGradient>
+        <linearGradient id="lg2" x1="60" y1="6" x2="60" y2="115" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="#ff8080" stop-opacity=".55"/>
+          <stop offset="50%"  stop-color="#e0253b" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#800010" stop-opacity=".4"/>
+        </linearGradient>
+        <linearGradient id="lg3" x1="60" y1="6" x2="60" y2="50" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="white" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="shd">
+          <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#7a0012" flood-opacity=".4"/>
+          <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#000"    flood-opacity=".15"/>
+        </filter>
+        <filter id="lg">
+          <feGaussianBlur stdDeviation="1.2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <clipPath id="sc">
+          <path d="M60 6L10 26v30c0 26 19.2 50.3 50 57.5C90.8 106.3 110 82 110 56V26L60 6z"/>
+        </clipPath>
+      </defs>
+
+      <!-- Shield body -->
+      <g filter="url(#shd)">
+        <path d="M60 6L10 26v30c0 26 19.2 50.3 50 57.5C90.8 106.3 110 82 110 56V26L60 6z"
+              fill="url(#lg1)"/>
+      </g>
+
+      <!-- Inner bevel border -->
+      <path d="M60 13L17 30.5v25.5c0 21.5 15.8 41.5 43 47.5C87.2 97.5 103 77.5 103 56V30.5L60 13z"
+            fill="none" stroke="url(#lg2)" stroke-width="1.2"/>
+
+      <!-- Top gloss -->
+      <ellipse cx="60" cy="28" rx="30" ry="18" fill="url(#lg3)" clip-path="url(#sc)"/>
+
+      <!-- Crown notch -->
+      <path d="M46 19L60 13L74 19" fill="none" stroke="rgba(255,160,160,.4)" stroke-width="1.5" stroke-linecap="round"/>
+
+      <!-- U letterform -->
+      <rect x="37" y="38" width="7" height="24" rx="3.5" fill="white" opacity=".95" filter="url(#lg)"/>
+      <rect x="76" y="38" width="7" height="24" rx="3.5" fill="white" opacity=".95" filter="url(#lg)"/>
+      <rect x="37" y="55" width="46" height="7"  rx="3.5" fill="white" opacity=".95" filter="url(#lg)"/>
+
+      <!-- A letterform -->
+      <path d="M48 78 L56 57 L64 78" stroke="white" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".95" filter="url(#lg)"/>
+      <path d="M51 70 L61 70"        stroke="white" stroke-width="4.5" stroke-linecap="round" opacity=".95"/>
+    </svg>
+  </div>
+
+  <h1 class="hero-wordmark">UA<em>Intel</em></h1>
+
+  <p class="hero-tagline">
+    Analyse User-Agent strings for malware signatures, scanner fingerprints,<br>
+    automation frameworks and spoofed tokens. Shared with the security community.
+  </p>
+
+  <!-- ANALYSIS PANEL -->
+  <div class="analysis-panel">
+    <div class="tabs">
+      <button class="tab on" onclick="goTab('analyze',this)">UA String</button>
+      <button class="tab" onclick="goTab('recent',this);loadRecent()">Recent Reports</button>
+      <button class="tab" onclick="goTab('dbstatus',this);loadDbStatus()">DB Status</button>
+    </div>
+    <div class="tab-panels">
+
+      <!-- ANALYZE -->
+      <div class="tab-panel on" id="tab-analyze">
+        <div class="error-box" id="ebox"></div>
+        <div class="input-label">Paste User-Agent String</div>
+        <textarea class="ua-input" id="mainInput"
+          placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ..."></textarea>
+        <div class="input-row">
+          <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Analyze
+          </button>
+          <button class="btn-sec" onclick="clearAll()">Clear</button>
+        </div>
+        <div class="samples" id="samplesRow"></div>
+        <div class="scan-wrap" id="spinner">
+          <div class="scan-track"><div class="scan-fill"></div></div>
+          <div class="scan-txt" id="stxt">INITIALIZING...</div>
+        </div>
+      </div>
+
+      <!-- RECENT -->
+      <div class="tab-panel" id="tab-recent">
+        <div id="rlist" style="font-family:var(--font-mono);font-size:.68rem;color:var(--text-dis);padding:24px;text-align:center">Loading...</div>
+      </div>
+
+      <!-- DB STATUS -->
+      <div class="tab-panel" id="tab-dbstatus">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+          <div style="text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:11px">
+            <div style="font-family:var(--font-mono);font-size:.9rem;font-weight:500;color:var(--red)" id="m-badbots">—</div>
+            <div style="font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dis);margin-top:3px">Bad Bots</div>
+          </div>
+          <div style="text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:11px">
+            <div style="font-family:var(--font-mono);font-size:.9rem;font-weight:500;color:var(--red)" id="m-malware">—</div>
+            <div style="font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dis);margin-top:3px">Malware</div>
+          </div>
+          <div style="text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:11px">
+            <div style="font-family:var(--font-mono);font-size:.9rem;font-weight:500;color:var(--red)" id="m-crawlers">—</div>
+            <div style="font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dis);margin-top:3px">Crawlers</div>
+          </div>
+          <div style="text-align:center;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:11px">
+            <div style="font-family:var(--font-mono);font-size:.9rem;font-weight:500;color:var(--text-sec)" id="m-total">—</div>
+            <div style="font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dis);margin-top:3px">Total</div>
+          </div>
+        </div>
+        <div id="dbGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sec" style="flex:1;padding:9px" onclick="triggerUpdate()">Update All Databases</button>
+          <button class="btn-sec" onclick="loadDbStatus()">Refresh</button>
+        </div>
+        <div id="updateMsg" style="font-family:var(--font-ui);font-size:.7rem;color:var(--text-ter);padding:7px 0"></div>
+      </div>
+
+    </div>
+  </div><!-- /analysis-panel -->
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <div class="verdict-bar" id="vbar">
+      <div class="vs-panel">
+        <div class="vs-num" id="vsnum">0</div>
+        <div class="vs-max">/100</div>
+      </div>
+      <div class="vi-panel">
+        <div class="vi-cat"    id="vicat">Category</div>
+        <div class="vi-verdict" id="viverd">Verdict</div>
+        <div class="vi-sub"    id="visub"></div>
+      </div>
+    </div>
+
+    <div class="score-strip"><div class="strip-fill" id="sstrip" style="width:0%"></div></div>
+    <div class="cat-strip" id="catstrip"></div>
+    <div class="ua-display" id="uaDisplay"></div>
+
+    <div class="res-grid">
+      <div class="res-card"><div class="rc-title">Parsed Details</div><div id="parsedCard"></div></div>
+      <div class="res-card"><div class="rc-title">Detection Flags</div><div id="flagsCard"></div></div>
+    </div>
+    <div class="res-grid">
+      <div class="res-card"><div class="rc-title">Detection Sources</div><div id="sourcesCard"></div></div>
+      <div class="res-card"><div class="rc-title">Community Intelligence</div><div id="commCard"></div></div>
+    </div>
+
+    <div class="community-section">
+      <div class="cs-title">Submit Community Report</div>
+      <div class="step-label"><div class="sn">1</div>Select category — required</div>
+      <div class="cat-grid">
+        <button class="cat-opt" id="catBtn-malicious" onclick="selCat('malicious',this)">Malicious</button>
+        <button class="cat-opt" id="catBtn-bot"       onclick="selCat('bot',this)">Bot / Scanner</button>
+        <button class="cat-opt" id="catBtn-benign"    onclick="selCat('benign',this)">Legitimate</button>
+      </div>
+      <div class="hint-msg hint-cat" id="hintCat">Select a category above before submitting.</div>
+      <div class="step-label"><div class="sn">2</div>Add comment — required, min 10 characters</div>
+      <textarea class="comm-textarea" id="commentTxt"
+        placeholder="Describe the threat — attack pattern, target endpoint, frequency, context..."
+        oninput="onCmt()"></textarea>
+      <div class="char-ct" id="charCt">0 / 500</div>
+      <div class="hint-msg hint-cmt" id="hintCmt">Comment must be at least 10 characters.</div>
+      <button class="btn-submit" id="submitBtn" onclick="submitReport()">Submit Report</button>
+      <div class="vote-row">
+        <div class="vc vm"><div class="vc-n" id="vm">0</div><div class="vc-l">Malicious</div></div>
+        <div class="vc vb"><div class="vc-n" id="vbot">0</div><div class="vc-l">Bot</div></div>
+        <div class="vc vg"><div class="vc-n" id="vb">0</div><div class="vc-l">Legit</div></div>
+      </div>
+    </div>
+
+  </div><!-- /results -->
+
+  <!-- STATS -->
+  <div class="hero-stats" id="heroStats">
+    <div class="hstat"><div class="hstat-val" id="hs-analyzed">—</div><div class="hstat-lbl">Analyzed</div></div>
+    <div class="hstat"><div class="hstat-val" id="hs-malicious">—</div><div class="hstat-lbl">Malicious</div></div>
+    <div class="hstat"><div class="hstat-val" id="hs-patterns">7,230</div><div class="hstat-lbl">DB Patterns</div></div>
+    <div class="hstat"><div class="hstat-val" id="hs-reports">—</div><div class="hstat-lbl">Reports</div></div>
+  </div>
+
+</section>
+</div><!-- /page -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:8000';
+let CUR_UA = '', SEL_CAT = '';
+
+/* ── Theme ── */
+function syncToggle(t){
+  document.getElementById('ts-dark').classList.toggle('active', t==='dark');
+  document.getElementById('ts-light').classList.toggle('active', t==='light');
+}
+function toggleTheme(){
+  const h = document.documentElement;
+  const next = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  h.setAttribute('data-theme', next);
+  localStorage.setItem('uaintel-theme', next);
+  syncToggle(next);
+}
+(()=>{
+  const saved = localStorage.getItem('uaintel-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  syncToggle(saved);
+})();
+
+/* ── Samples ── */
+const SAMPLES = [
+  {l:'Chrome/Win', u:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'},
+  {l:'Firefox',    u:'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0'},
+  {l:'sqlmap',     u:'sqlmap/1.7.8#stable (https://sqlmap.org)'},
+  {l:'curl',       u:'curl/8.5.0'},
+  {l:'Googlebot',  u:'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'},
+  {l:'Headless',   u:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 HeadlessChrome/122.0.0.0 Safari/537.36'},
+  {l:'Spoofed',    u:'Mozilla/5.0 (iPhone; Windows NT 10.0) AppleWebKit/537.36'},
+  {l:'GPTBot',     u:'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.0; +https://openai.com/gptbot)'},
+];
+(()=>{
+  const row = document.getElementById('samplesRow');
+  SAMPLES.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'sample-btn'; b.textContent = s.l; b.title = s.u;
+    b.onclick = () => { document.getElementById('mainInput').value = s.u; };
+    row.appendChild(b);
+  });
+})();
+
+const DB_NAMES = {nginx_bots:'Nginx Bad Bot',apache_bots:'Apache Bad Bot',seclists_ua:'SecLists UA',mthcht_malware:'mthcht Malware',crawlers:'Crawler DB',matomo_bots:'Matomo'};
+const SEV = {critical:0,high:1,medium:2,low:3,info:4};
+
+function goTab(n, btn){
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-'+n).classList.add('on');
+  btn.classList.add('on');
+}
+
+function getVC(d){
+  const t = d.flags.map(f => f.type);
+  if(t.includes('malware')||t.includes('db_malware')||t.includes('scanner')) return 'malicious';
+  if(t.includes('automation')) return 'likely';
+  if(t.includes('crawler')||t.includes('db_crawler')) return 'legitimate';
+  if(t.includes('fake_combo')||t.includes('spoofed')||t.includes('http_lib')) return 'suspicious';
+  const c = d.verdict_color;
+  if(c==='green') return 'legitimate'; if(c==='yellow') return 'suspicious'; if(c==='orange') return 'likely';
+  return 'malicious';
+}
+function getCatLabel(d){
+  const t = d.flags.map(f => f.type);
+  if(t.includes('malware')||t.includes('db_malware')) return 'Threat · Malware Signature';
+  if(t.includes('scanner'))    return 'Threat · Security Scanner';
+  if(t.includes('automation')) return 'Automation Framework';
+  if(t.includes('http_lib'))   return 'HTTP Client Library';
+  if(t.includes('fake_combo')) return 'Spoofing · Impossible OS Combo';
+  if(t.includes('spoofed'))    return 'Spoofing · Version Inconsistency';
+  if(t.includes('crawler')||t.includes('db_crawler')) return 'Known Crawler';
+  return d.risk_score <= 20 ? 'Legitimate Browser' : 'Behavioural Analysis';
+}
+function getCatTags(d){
+  const t = d.flags.map(f => f.type), tags = [];
+  if(t.includes('malware')||t.includes('db_malware')) tags.push({cls:'malicious',l:'Malware'});
+  if(t.includes('scanner'))    tags.push({cls:'scanner',l:'Scanner'});
+  if(t.includes('automation')) tags.push({cls:'automation',l:'Automation'});
+  if(t.includes('http_lib'))   tags.push({cls:'http_lib',l:'HTTP Library'});
+  if(t.includes('fake_combo')) tags.push({cls:'spoofed',l:'Fake OS Combo'});
+  if(t.includes('spoofed'))    tags.push({cls:'spoofed',l:'Version Spoofed'});
+  if(t.includes('crawler')||t.includes('db_crawler')) tags.push({cls:'crawler',l:'Crawler'});
+  if(t.includes('db_matomo')||t.includes('db_bad_bot')) tags.push({cls:'bot',l:'Known Bot'});
+  if(!tags.length) tags.push(d.risk_score <= 20 ? {cls:'legitimate',l:'Legitimate'} : {cls:'suspicious',l:'Suspicious'});
+  return tags;
+}
+
+async function runAnalysis(){
+  const ua = document.getElementById('mainInput').value.trim();
+  if(!ua){ showErr('Paste a User-Agent string to analyze.'); return; }
+  CUR_UA = ua; resetForm();
+  document.getElementById('ebox').classList.remove('on');
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('heroStats').style.display = 'none';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('spinner').classList.add('on');
+  const steps = ['RUNNING RULE ENGINE...','CHECKING BAD BOT DATABASE...','CHECKING MALWARE INTEL...','QUERYING COMMUNITY DB...','COMBINING SCORES...'];
+  let si = 0; const st = document.getElementById('stxt');
+  const iv = setInterval(() => { st.textContent = steps[Math.min(si++, steps.length-1)]; }, 600);
+  try {
+    const r = await fetch(API+'/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_agent:ua})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    if(data.error) throw new Error(data.error);
+    renderResults(ua, data); loadStats();
+  } catch(e) { showErr('Analysis failed: '+e.message+' — is the backend running on port 8000?'); }
+  finally { clearInterval(iv); document.getElementById('analyzeBtn').disabled = false; document.getElementById('spinner').classList.remove('on'); }
+}
+
+function renderResults(ua, d){
+  const score = d.risk_score, vc = getVC(d);
+  document.getElementById('vbar').className = 'verdict-bar '+vc;
+  document.getElementById('vsnum').textContent = score;
+  document.getElementById('vicat').textContent = getCatLabel(d);
+  document.getElementById('viverd').textContent = d.verdict;
+  document.getElementById('visub').textContent = d.flag_count
+    ? d.flag_count+' flag'+(d.flag_count!==1?'s':'')+' across '+d.detection_sources.length+' source'+(d.detection_sources.length!==1?'s':'')
+    : 'No threats detected across all detection layers.';
+  const sf = document.getElementById('sstrip');
+  sf.className = 'strip-fill '+vc; setTimeout(() => sf.style.width = score+'%', 60);
+  document.getElementById('catstrip').innerHTML = getCatTags(d).map(t => `<span class="ctag ${t.cls}">${t.l}</span>`).join('');
+  document.getElementById('uaDisplay').textContent = ua;
+
+  const p = d.parsed;
+  document.getElementById('parsedCard').innerHTML = [
+    ['Browser', p.browser+(p.browser_version?' '+p.browser_version:'')],
+    ['OS', p.os+(p.os_version?' '+p.os_version:'')],
+    ['Device', p.device], ['Engine', p.engine], ['Length', p.raw.length+' chars'],
+  ].map(([k,v]) => `<div class="rc-row"><span class="rck">${k}</span><span class="rcv">${esc(v)}</span></div>`).join('');
+
+  const fe = document.getElementById('flagsCard');
+  if(!d.flags.length){ fe.innerHTML = '<div class="no-flags">No threats detected</div>'; }
+  else {
+    fe.innerHTML = [...d.flags].sort((a,b) => (SEV[a.severity]||9)-(SEV[b.severity]||9)).map(f =>
+      `<div class="flag-row">
+        <span class="flag-pill ${f.type}">${f.type.replace(/_/g,' ')}</span>
+        <span class="flag-lbl">${esc(f.label)}</span>
+        <span class="flag-sev ${f.severity||'medium'}">${f.severity||'med'}</span>
+      </div>`).join('');
+  }
+
+  const counts = d.db_counts||{}, total = Object.values(counts).reduce((a,b) => a+b, 0);
+  document.getElementById('sourcesCard').innerHTML =
+    (!d.detection_sources.length
+      ? '<div style="font-family:var(--font-ui);font-size:.72rem;color:var(--green);padding:8px 0;font-weight:500">No malicious sources triggered</div>'
+      : d.detection_sources.map(s => `<div style="font-family:var(--font-mono);font-size:.64rem;color:var(--text-sec);padding:5px 0;border-bottom:1px solid var(--bg3)">${esc(s)}</div>`).join('')
+    ) + `<div style="font-family:var(--font-ui);font-size:.66rem;font-weight:500;color:${d.db_loaded?'var(--green)':'var(--yellow)'};margin-top:9px">${d.db_loaded?total.toLocaleString()+' patterns checked':'Databases loading...'}</div>`;
+
+  const c = d.community;
+  document.getElementById('vm').textContent   = c.found ? c.malicious_votes : 0;
+  document.getElementById('vbot').textContent = c.found ? c.bot_votes : 0;
+  document.getElementById('vb').textContent   = c.found ? c.benign_votes : 0;
+  const ce = document.getElementById('commCard');
+  if(!c.found){
+    ce.innerHTML = '<div style="font-family:var(--font-ui);font-size:.7rem;color:var(--text-dis);padding:8px 0;text-align:center">First analysis — submit the first report below.</div>';
+  } else {
+    const tv = c.total_votes||0, bPct = tv ? Math.round(c.benign_votes/tv*100) : 0, botPct = tv ? Math.round(c.bot_votes/tv*100) : 0;
+    ce.innerHTML = [
+      `<div class="rc-row"><span class="rck">Lookups</span><span class="rcv">${c.total_lookups.toLocaleString()}</span></div>`,
+      `<div class="rc-row"><span class="rck">First Seen</span><span class="rcv">${c.first_seen}</span></div>`,
+      `<div class="rc-row"><span class="rck">Total Votes</span><span class="rcv">${tv}</span></div>`,
+      `<div class="cbar"><span class="cbar-lbl">Malicious</span><div class="cbar-track"><div class="cbar-fill r" style="width:${c.confidence_malicious}%"></div></div><span class="cbar-pct" style="color:var(--red)">${c.confidence_malicious}%</span></div>`,
+      `<div class="cbar"><span class="cbar-lbl">Bot</span><div class="cbar-track"><div class="cbar-fill y" style="width:${botPct}%"></div></div><span class="cbar-pct" style="color:var(--yellow)">${botPct}%</span></div>`,
+      `<div class="cbar"><span class="cbar-lbl">Benign</span><div class="cbar-track"><div class="cbar-fill g" style="width:${bPct}%"></div></div><span class="cbar-pct" style="color:var(--green)">${bPct}%</span></div>`,
+    ].join('');
+  }
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function selCat(cat, btn){
+  SEL_CAT = cat;
+  document.querySelectorAll('.cat-opt').forEach(b => b.className = 'cat-opt');
+  btn.classList.add('sel-'+cat);
+  document.getElementById('hintCat').classList.remove('show');
+}
+function onCmt(){
+  const v = document.getElementById('commentTxt').value, l = v.length;
+  document.getElementById('charCt').textContent = l+' / 500';
+  if(l >= 10) document.getElementById('hintCmt').classList.remove('show');
+}
+function resetForm(){
+  SEL_CAT = '';
+  document.querySelectorAll('.cat-opt').forEach(b => b.className = 'cat-opt');
+  document.getElementById('commentTxt').value = '';
+  document.getElementById('charCt').textContent = '0 / 500';
+  document.getElementById('hintCat').classList.remove('show');
+  document.getElementById('hintCmt').classList.remove('show');
+}
+async function submitReport(){
+  if(!CUR_UA){ showToast('Analyze a UA first.'); return; }
+  let ok = true;
+  if(!SEL_CAT){ document.getElementById('hintCat').classList.add('show'); ok = false; }
+  const cmt = document.getElementById('commentTxt').value.trim();
+  if(cmt.length < 10){
+    document.getElementById('hintCmt').classList.add('show');
+    const ta = document.getElementById('commentTxt');
+    ta.classList.add('shake'); setTimeout(() => ta.classList.remove('shake'), 450);
+    ok = false;
+  }
+  if(!ok) return;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  try {
+    const r = await fetch(API+'/report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_agent:CUR_UA, category:SEL_CAT, comment:cmt})});
+    const data = await r.json();
+    if(data.success){ showToast('Report submitted — thank you.'); resetForm(); loadStats(); }
+  } catch(e){ showToast('Submit failed.'); }
+  finally { btn.disabled = false; btn.textContent = 'Submit Report'; }
+}
+
+async function loadRecent(){
+  const el = document.getElementById('rlist');
+  try {
+    const data = await fetch(API+'/recent').then(r => r.json());
+    if(!data.length){ el.innerHTML = '<div style="font-family:var(--font-ui);font-size:.72rem;color:var(--text-dis);padding:24px;text-align:center">No reports yet.</div>'; return; }
+    const VCOLS = {'Malicious':'var(--red)','Likely Malicious':'var(--orange)','Suspicious':'var(--yellow)','Legitimate':'var(--green)'};
+    const VBDR  = {'Malicious':'var(--red-border)','Likely Malicious':'var(--orange-bdr)','Suspicious':'var(--yellow-bdr)','Legitimate':'var(--green-bdr)'};
+    el.innerHTML = data.map(r =>
+      `<div class="recent-item" onclick="analyzeFrom('${esc(r.ua_string)}')">
+        <div class="ri-ua">${esc(r.ua_string)}</div>
+        <div class="ri-v" style="color:${VCOLS[r.verdict]||'var(--text-ter)'};border-color:${VBDR[r.verdict]||'var(--border)'}">${r.verdict}</div>
+        <div class="ri-s" style="color:${VCOLS[r.verdict]||'var(--text-ter)'}">${r.risk_score}</div>
+      </div>`).join('');
+  } catch(e){ el.innerHTML = '<div style="color:var(--red);font-family:var(--font-ui);font-size:.72rem;padding:24px">Failed to load.</div>'; }
+}
+function analyzeFrom(ua){ document.getElementById('mainInput').value = ua; goTab('analyze', document.querySelector('.tab')); runAnalysis(); }
+
+async function loadDbStatus(){
+  try {
+    const d = await fetch(API+'/db-status').then(r => r.json());
+    const m = d.in_memory||{};
+    document.getElementById('m-badbots').textContent  = (m.bad_bots_combined||0).toLocaleString();
+    document.getElementById('m-malware').textContent  = (m.malware_intel||0).toLocaleString();
+    document.getElementById('m-crawlers').textContent = (m.crawlers||0).toLocaleString();
+    document.getElementById('m-total').textContent    = (m.total||0).toLocaleString();
+    document.getElementById('dbGrid').innerHTML = Object.entries(DB_NAMES).map(([key,name]) => {
+      const src = d[key]||{}, ok = src.loaded;
+      return `<div class="db-mini">
+        <div class="db-mini-name">${name}</div>
+        <div style="font-family:var(--font-ui);font-size:.65rem;font-weight:600;color:${ok?'var(--green)':'var(--red)'}">${ok?'Loaded':'Not loaded'}</div>
+        <div style="font-family:var(--font-mono);font-size:.62rem;color:var(--red);margin-top:2px">${(src.entry_count||0).toLocaleString()} entries</div>
+      </div>`;
+    }).join('');
+  } catch(e){}
+}
+async function triggerUpdate(){
+  const m = document.getElementById('updateMsg');
+  m.textContent = 'Downloading databases...';
+  try { await fetch(API+'/db-update', {method:'POST'}); m.textContent = 'Update triggered. Refreshing in 30s...'; setTimeout(loadDbStatus, 30000); }
+  catch(e){ m.textContent = 'Failed to trigger update.'; }
+}
+function loadStats(){
+  fetch(API+'/stats').then(r => r.json()).then(d => {
+    document.getElementById('hs-analyzed').textContent  = (d.total_uas||0).toLocaleString();
+    document.getElementById('hs-malicious').textContent = (d.malicious_uas||0).toLocaleString();
+    document.getElementById('hs-reports').textContent   = (d.total_reports||0).toLocaleString();
+  }).catch(()=>{});
+}
+function clearAll(){
+  document.getElementById('mainInput').value = '';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('heroStats').style.display = 'flex';
+  document.getElementById('ebox').classList.remove('on');
+  resetForm();
+}
+function showErr(m){ const e = document.getElementById('ebox'); e.textContent = m; e.classList.add('on'); }
+function showToast(m){ const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 3000); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+loadStats();
+</script>
+</body>
+</html>
