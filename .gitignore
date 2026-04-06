@@ -1,0 +1,27 @@
+# Environment
+.env
+*.env
+
+# Database files (downloaded automatically)
+databases/*.txt
+databases/*.json
+databases/*.csv
+databases/*.yml
+databases/*.php
+databases/versions.json
+
+# SQLite (local dev only)
+*.db
+*.sqlite
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db

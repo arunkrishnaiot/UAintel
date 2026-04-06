@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: uaintel
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: uaintel-db
+          property: connectionString
+      - key: RATE_LIMIT_ANALYZE
+        value: 30
+      - key: RATE_LIMIT_REPORT
+        value: 10
+      - key: DB_AUTO_UPDATE_DAYS
+        value: 7
+
+databases:
+  - name: uaintel-db
+    plan: free
+    databaseName: uaintel
+    user: uaintel
